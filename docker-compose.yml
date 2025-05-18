@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16
+    restart: always
+    container_name: postgres
+    environment:
+      POSTGRES_DB: liverdb
+      POSTGRES_USER: liver_server
+      POSTGRES_PASSWORD: 123456789
+    ports:
+      - "5433:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+  backend:
+    build: ./backend
+    container_name: nest_backend
+    depends_on:
+      - postgres
+    environment:
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_USER: liver_server
+      DATABASE_PASSWORD: 123456789
+      DATABASE_NAME: liverdb
+      JWT_SECRET: 76h7891uf
+      MODEL_API_URL: http://model:8000
+    ports:
+      - "3090:3090"
+    volumes:
+      - imagesdb:/app/imagesdb 
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    container_name: react_frontend
+    ports:
+      - "3080:80"
+    depends_on:
+      - backend
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+
+  model:
+    build:
+      context: ./model
+    container_name: model_api
+    ports:
+      - "3070:3070"
+    restart: unless-stopped
+
+volumes:
+  pg_data:
+  imagesdb:
